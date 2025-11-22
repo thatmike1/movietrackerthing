@@ -81,39 +81,44 @@ export function MediaList({ type }: MediaListProps) {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filteredItems.map((item: any) => {
             const isWatched = item.watchEntries.some((entry: any) => entry.user?.name === mode); 
+            const userRating = item.ratings.find((r: any) => r.user?.name === mode);
             
             return (
               <Card 
                 key={item.id} 
-                className="overflow-hidden group relative cursor-pointer border-0 bg-card/50 hover:bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="overflow-hidden group relative cursor-pointer bg-card neo-brutal"
                 onClick={() => setSelectedItem(item)}
               >
-                <div className="aspect-[2/3] relative overflow-hidden rounded-t-lg">
+                <div className="aspect-[2/3] relative overflow-hidden border-b-2 border-border">
                   <img
                     src={getImageUrl(item.posterPath)}
                     alt={item.title}
-                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                    className="object-cover w-full h-full"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
                   
                   {isWatched && (
-                    <div className="absolute top-2 right-2 bg-green-500/90 text-white p-1 rounded-full shadow-lg backdrop-blur-sm">
-                      <Check className="h-3 w-3" />
+                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 font-mono text-xs font-bold border-2 border-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      WATCHED
                     </div>
                   )}
                   
                   {item.voteAverage && (
-                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 text-yellow-400 px-2 py-1 rounded-md backdrop-blur-md text-xs font-bold">
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 font-mono text-xs font-bold border-2 border-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                       <Star className="h-3 w-3 fill-current" />
-                      {item.voteAverage.toFixed(1)}
+                      <span>{item.voteAverage.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold truncate text-sm">{item.title}</h3>
-                  <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                    <span>{item.releaseDate?.split('-')[0]}</span>
-                    <span className="capitalize">{item.type?.toLowerCase()}</span>
+                <CardContent className="p-5">
+                  <h3 className="font-mono font-bold truncate text-lg uppercase tracking-tight">{item.title}</h3>
+                  <div className="flex items-center justify-between mt-3 font-mono text-xs text-muted-foreground">
+                    <span className="bg-muted px-2 py-1 rounded-sm border border-border/20">{item.releaseDate?.split('-')[0]}</span>
+                    {userRating && (
+                      <div className="flex items-center gap-1 text-primary font-bold">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span>{userRating.value}/10</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
