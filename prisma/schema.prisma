@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   // "Me", "Girlfriend", "Together"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  watchEntries WatchEntry[]
+  ratings      Rating[]
+}
+
+model MediaItem {
+  id          String   @id @default(cuid())
+  tmdbId      Int      @unique
+  type        String   // "MOVIE" or "SERIES"
+  title       String
+  overview    String?
+  posterPath  String?
+  backdropPath String?
+  releaseDate String?  // YYYY-MM-DD
+  genres      String?  // JSON string or comma-separated
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  watchEntries WatchEntry[]
+  ratings      Rating[]
+}
+
+model WatchEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  mediaItemId String
+  watchedAt   DateTime @default(now())
+  mood        String?  // Optional mood tag
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mediaItemId])
+}
+
+model Rating {
+  id          String   @id @default(cuid())
+  userId      String
+  mediaItemId String
+  value       Int      // 1-10 or 1-5
+  review      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId]) // One rating per user per item
+  @@index([userId])
+  @@index([mediaItemId])
+}
