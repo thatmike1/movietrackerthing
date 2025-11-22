@@ -85,26 +85,35 @@ export function MediaList({ type }: MediaListProps) {
             return (
               <Card 
                 key={item.id} 
-                className="overflow-hidden group relative cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                className="overflow-hidden group relative cursor-pointer border-0 bg-card/50 hover:bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 onClick={() => setSelectedItem(item)}
               >
-                <div className="aspect-[2/3] relative">
+                <div className="aspect-[2/3] relative overflow-hidden rounded-t-lg">
                   <img
                     src={getImageUrl(item.posterPath)}
                     alt={item.title}
-                    className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                  
                   {isWatched && (
-                    <div className="absolute top-2 right-2 bg-black/50 p-1 rounded-full">
-                      <Check className="h-4 w-4 text-green-500" />
+                    <div className="absolute top-2 right-2 bg-green-500/90 text-white p-1 rounded-full shadow-lg backdrop-blur-sm">
+                      <Check className="h-3 w-3" />
+                    </div>
+                  )}
+                  
+                  {item.voteAverage && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 text-yellow-400 px-2 py-1 rounded-md backdrop-blur-md text-xs font-bold">
+                      <Star className="h-3 w-3 fill-current" />
+                      {item.voteAverage.toFixed(1)}
                     </div>
                   )}
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold truncate">{item.title}</h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">{item.releaseDate?.split('-')[0]}</span>
-                    {/* Placeholder for rating if we had it */}
+                <CardContent className="p-4">
+                  <h3 className="font-bold truncate text-sm">{item.title}</h3>
+                  <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                    <span>{item.releaseDate?.split('-')[0]}</span>
+                    <span className="capitalize">{item.type?.toLowerCase()}</span>
                   </div>
                 </CardContent>
               </Card>

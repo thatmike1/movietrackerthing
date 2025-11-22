@@ -87,6 +87,7 @@ export function AddMediaForm() {
           backdropPath: item.backdrop_path,
           releaseDate: item.release_date || item.first_air_date,
           genres: item.genre_ids,
+          voteAverage: item.vote_average,
           userMode: mode,
           rating: rating ? parseInt(rating) : undefined,
         }),
@@ -142,36 +143,44 @@ export function AddMediaForm() {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {displayData?.results?.map((item: any) => (
-          <Card key={item.id} className="overflow-hidden">
-            <div className="aspect-[2/3] relative">
+          <Card key={item.id} className="overflow-hidden border-0 bg-card/50 hover:bg-card transition-colors">
+            <div className="aspect-[2/3] relative overflow-hidden rounded-t-lg">
               <img
                 src={getImageUrl(item.poster_path)}
                 alt={item.title || item.name}
                 className="object-cover w-full h-full"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+              
+              {item.vote_average > 0 && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 text-yellow-400 px-2 py-1 rounded-md backdrop-blur-md text-xs font-bold">
+                  <Star className="h-3 w-3 fill-current" />
+                  {item.vote_average.toFixed(1)}
+                </div>
+              )}
             </div>
-            <CardContent className="p-3">
-              <h3 className="font-semibold truncate">{item.title || item.name}</h3>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="p-4">
+              <h3 className="font-bold truncate text-sm">{item.title || item.name}</h3>
+              <p className="text-xs text-muted-foreground mt-1">
                 {item.release_date || item.first_air_date || 'Unknown'}
               </p>
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-3">
                  <Button 
                   size="sm" 
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 h-8 text-xs"
                   onClick={() => addMutation.mutate(item)}
                   disabled={addMutation.isPending}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-3 w-3 mr-1" />
                   List
                 </Button>
                 <Button 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 h-8 text-xs"
                   onClick={() => setSelectedItem(item)}
                 >
-                  <Star className="h-4 w-4 mr-1" />
+                  <Star className="h-3 w-3 mr-1" />
                   Rate
                 </Button>
               </div>

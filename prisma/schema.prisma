@@ -29,8 +29,8 @@ model MediaItem {
   posterPath  String?
   backdropPath String?
   releaseDate String?  // YYYY-MM-DD
-  genres      String?  // JSON string or comma-separated
-  
+  genres      String   // JSON string of genre IDs
+  voteAverage Float?   // TMDB Public Rating
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

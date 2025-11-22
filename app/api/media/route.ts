@@ -38,6 +38,7 @@ export async function POST(request: Request) {
         backdropPath,
         releaseDate,
         genres: JSON.stringify(genres),
+        voteAverage: body.voteAverage,
       },
       create: {
         tmdbId,
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
         backdropPath,
         releaseDate,
         genres: JSON.stringify(genres),
+        voteAverage: body.voteAverage,
       },
     });
 
