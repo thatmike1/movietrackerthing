@@ -2,38 +2,76 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { searchMulti, TMDBResult, getImageUrl } from '@/lib/tmdb';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Check, Loader2, Star } from 'lucide-react';
+import { Plus, Check, Loader2, Star, Filter } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getImageUrl, TMDBResult } from '@/lib/tmdb';
+
+const GENRES = [
+  { id: '28', name: 'Action' },
+  { id: '12', name: 'Adventure' },
+  { id: '16', name: 'Animation' },
+  { id: '35', name: 'Comedy' },
+  { id: '80', name: 'Crime' },
+  { id: '99', name: 'Documentary' },
+  { id: '18', name: 'Drama' },
+  { id: '10751', name: 'Family' },
+  { id: '14', name: 'Fantasy' },
+  { id: '36', name: 'History' },
+  { id: '27', name: 'Horror' },
+  { id: '10402', name: 'Music' },
+  { id: '9648', name: 'Mystery' },
+  { id: '10749', name: 'Romance' },
+  { id: '878', name: 'Science Fiction' },
+  { id: '10770', name: 'TV Movie' },
+  { id: '53', name: 'Thriller' },
+  { id: '10752', name: 'War' },
+  { id: '37', name: 'Western' },
+];
 
 export function AddMediaForm() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TMDBResult | null>(null);
   const [rating, setRating] = useState<string>('');
-  const [isWatched, setIsWatched] = useState(false);
   
+  // Browse State
+  const [browseType, setBrowseType] = useState<'movie' | 'tv'>('movie');
+  const [browseGenre, setBrowseGenre] = useState<string>('all');
+
   const { mode } = useAppStore();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Debounce search input
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    const timeoutId = setTimeout(() => setDebouncedQuery(e.target.value), 500);
-    return () => clearTimeout(timeoutId);
-  };
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['search', debouncedQuery],
-    queryFn: () => searchMulti(debouncedQuery),
+  // Search Query
+  const { data: searchData, isLoading: isSearchLoading } = useQuery({
+    queryKey: ['tmdb', 'search', debouncedQuery],
+    queryFn: async () => {
+      const res = await fetch(`/api/tmdb?endpoint=search&query=${encodeURIComponent(debouncedQuery)}`);
+      if (!res.ok) throw new Error('Failed to search');
+      return res.json();
+    },
     enabled: debouncedQuery.length > 2,
   });
+
+  // Browse Query
+  const { data: browseData, isLoading: isBrowseLoading } = useQuery({
+    queryKey: ['tmdb', 'discover', browseType, browseGenre],
+    queryFn: async () => {
+      const res = await fetch(`/api/tmdb?endpoint=discover&type=${browseType}&genre=${browseGenre}`);
+      if (!res.ok) throw new Error('Failed to browse');
+      return res.json();
+    },
+    enabled: debouncedQuery.length <= 2, // Only browse when not searching
+  });
+
+  const displayData = debouncedQuery.length > 2 ? searchData : browseData;
+  const isLoading = debouncedQuery.length > 2 ? isSearchLoading : isBrowseLoading;
 
   const addMutation = useMutation({
     mutationFn: async (item: TMDBResult) => {
@@ -42,7 +80,7 @@ export function AddMediaForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tmdbId: item.id,
-          type: item.media_type,
+          type: item.media_type || (browseType === 'tv' ? 'tv' : 'movie'), // Fallback for discover results which might lack media_type
           title: item.title || item.name,
           overview: item.overview,
           posterPath: item.poster_path,
@@ -51,15 +89,6 @@ export function AddMediaForm() {
           genres: item.genre_ids,
           userMode: mode,
           rating: rating ? parseInt(rating) : undefined,
-          // If rated, it's watched. If explicitly marked watched, it's watched.
-          // The API creates a WatchEntry if userId is present.
-          // We might need to pass a specific flag if we want to add to watchlist (unwatched) vs watched history.
-          // Currently API creates WatchEntry immediately. Let's assume WatchEntry = "In Library".
-          // We need a way to distinguish "Watchlist" vs "Watched".
-          // Schema has `watchedAt`. Maybe we set it to null for watchlist?
-          // Schema: watchedAt DateTime @default(now()).
-          // We might need to update schema or just use the existence of Rating to imply "Watched".
-          // For now, let's just send what we have.
         }),
       });
       if (!res.ok) throw new Error('Failed to add');
@@ -69,13 +98,12 @@ export function AddMediaForm() {
       queryClient.invalidateQueries({ queryKey: ['recent'] });
       setSelectedItem(null);
       setRating('');
-      setIsWatched(false);
     },
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-4">
         <Input
           placeholder="Search movies or series..."
           value={query}
@@ -85,12 +113,35 @@ export function AddMediaForm() {
           }}
           className="max-w-md"
         />
+
+        {debouncedQuery.length <= 2 && (
+          <div className="flex gap-4 items-center">
+             <Tabs value={browseType} onValueChange={(v: any) => setBrowseType(v)}>
+                <TabsList>
+                  <TabsTrigger value="movie">Movies</TabsTrigger>
+                  <TabsTrigger value="tv">Series</TabsTrigger>
+                </TabsList>
+             </Tabs>
+             
+             <Select value={browseGenre} onValueChange={setBrowseGenre}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Genres</SelectItem>
+                  {GENRES.map(g => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+             </Select>
+          </div>
+        )}
       </div>
 
-      {isLoading && <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</div>}
+      {isLoading && <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {data?.results?.map((item) => (
+        {displayData?.results?.map((item: any) => (
           <Card key={item.id} className="overflow-hidden">
             <div className="aspect-[2/3] relative">
               <img
