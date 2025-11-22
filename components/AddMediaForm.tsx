@@ -6,13 +6,18 @@ import { searchMulti, TMDBResult, getImageUrl } from '@/lib/tmdb';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Check, Loader2 } from 'lucide-react';
+import { Plus, Check, Loader2, Star } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export function AddMediaForm() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedItem, setSelectedItem] = useState<TMDBResult | null>(null);
+  const [rating, setRating] = useState<string>('');
+  const [isWatched, setIsWatched] = useState(false);
+  
   const { mode } = useAppStore();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -32,15 +37,6 @@ export function AddMediaForm() {
 
   const addMutation = useMutation({
     mutationFn: async (item: TMDBResult) => {
-      // TODO: Get actual User ID based on mode. For now, we'll mock it or handle it in the backend if we had auth.
-      // Since we don't have real auth, we'll just pass the mode as the "userId" for now to keep it simple as requested.
-      // In a real app, we'd look up the User record by name (Me, Girlfriend, Together).
-      
-      // First, we need to ensure the User exists. 
-      // For this MVP, let's assume the backend handles "finding" the user by name or we create them on init.
-      // I'll update the API to handle "userName" instead of "userId" for simplicity if needed, 
-      // or I'll just send a dummy ID for now and fix it in the next step.
-      
       const res = await fetch('/api/media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,8 +49,17 @@ export function AddMediaForm() {
           backdropPath: item.backdrop_path,
           releaseDate: item.release_date || item.first_air_date,
           genres: item.genre_ids,
-          // sending mode as a placeholder for user identification logic
-          userMode: mode, 
+          userMode: mode,
+          rating: rating ? parseInt(rating) : undefined,
+          // If rated, it's watched. If explicitly marked watched, it's watched.
+          // The API creates a WatchEntry if userId is present.
+          // We might need to pass a specific flag if we want to add to watchlist (unwatched) vs watched history.
+          // Currently API creates WatchEntry immediately. Let's assume WatchEntry = "In Library".
+          // We need a way to distinguish "Watchlist" vs "Watched".
+          // Schema has `watchedAt`. Maybe we set it to null for watchlist?
+          // Schema: watchedAt DateTime @default(now()).
+          // We might need to update schema or just use the existence of Rating to imply "Watched".
+          // For now, let's just send what we have.
         }),
       });
       if (!res.ok) throw new Error('Failed to add');
@@ -62,7 +67,9 @@ export function AddMediaForm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recent'] });
-      // Maybe show a toast
+      setSelectedItem(null);
+      setRating('');
+      setIsWatched(false);
     },
   });
 
@@ -74,7 +81,6 @@ export function AddMediaForm() {
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            // Simple debounce implementation inline for now, or use the effect above
             setTimeout(() => setDebouncedQuery(e.target.value), 500);
           }}
           className="max-w-md"
@@ -98,19 +104,72 @@ export function AddMediaForm() {
               <p className="text-xs text-muted-foreground">
                 {item.release_date || item.first_air_date || 'Unknown'}
               </p>
-              <Button 
-                size="sm" 
-                className="w-full mt-2" 
-                onClick={() => addMutation.mutate(item)}
-                disabled={addMutation.isPending}
-              >
-                {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
-                Add to Watchlist
-              </Button>
+              <div className="flex gap-2 mt-2">
+                 <Button 
+                  size="sm" 
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => addMutation.mutate(item)}
+                  disabled={addMutation.isPending}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  List
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <Star className="h-4 w-4 mr-1" />
+                  Rate
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rate {selectedItem?.title || selectedItem?.name}</DialogTitle>
+            <DialogDescription>
+              Add this to your watched history with a rating.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+             <div className="flex justify-center">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setRating(num.toString())}
+                      className={`p-1 hover:scale-110 transition-transform ${
+                        parseInt(rating) >= num ? 'text-yellow-500' : 'text-muted-foreground'
+                      }`}
+                    >
+                      <Star className={`h-6 w-6 ${parseInt(rating) >= num ? 'fill-current' : ''}`} />
+                    </button>
+                  ))}
+                </div>
+             </div>
+             <div className="text-center font-bold text-lg">
+                {rating ? `${rating}/10` : 'Select a rating'}
+             </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedItem(null)}>Cancel</Button>
+            <Button 
+              onClick={() => selectedItem && addMutation.mutate(selectedItem)} 
+              disabled={!rating || addMutation.isPending}
+            >
+              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
