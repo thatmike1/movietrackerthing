@@ -4,46 +4,46 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Retro Dark Neobrutalism Palette */
-  --background: 230 25% 10%; /* Darker, slightly blue-ish black */
-  --foreground: 60 30% 96%; /* Off-white for text */
+  /* Midnight Cyber Palette */
+  --background: 222 47% 11%; /* Deep Slate Blue */
+  --foreground: 210 40% 98%;
   
-  --card: 230 25% 14%;
-  --card-foreground: 60 30% 96%;
+  --card: 217 33% 17%; /* Slightly lighter slate */
+  --card-foreground: 210 40% 98%;
   
-  --popover: 230 25% 14%;
-  --popover-foreground: 60 30% 96%;
+  --popover: 217 33% 17%;
+  --popover-foreground: 210 40% 98%;
   
-  /* High Contrast Accents */
-  --primary: 150 100% 40%;  /* Retro Terminal Green */
+  /* Cool Electric Accents */
+  --primary: 262 83% 58%;  /* Electric Violet */
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 45 100% 50%;  /* Amber/Yellow */
-  --secondary-foreground: 0 0% 0%;
+  --secondary: 190 90% 50%;  /* Cyan */
+  --secondary-foreground: 222 47% 11%;
   
-  --muted: 230 20% 20%;
-  --muted-foreground: 230 10% 70%;
+  --muted: 217 33% 25%;
+  --muted-foreground: 215 20% 65%;
   
-  --accent: 280 70% 60%;  /* Retro Purple */
+  --accent: 320 70% 60%;  /* Hot Pink (Subtle) */
   --accent-foreground: 0 0% 100%;
   
-  --destructive: 0 80% 60%;
+  --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 0 0% 90%;  /* High contrast white border */
-  --input: 230 25% 14%;
-  --ring: 150 100% 40%;
+  --border: 217 33% 35%;  /* Lighter slate for borders, not stark white */
+  --input: 217 33% 17%;
+  --ring: 262 83% 58%;
   
-  --radius: 0.5rem; /* Keeping rounded as requested previously, but can be overridden */
+  --radius: 0.75rem;
   
-  --sidebar-background: 230 25% 12%;
-  --sidebar-foreground: 60 30% 96%;
-  --sidebar-primary: 150 100% 40%;
+  --sidebar-background: 222 47% 9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 262 83% 58%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 230 25% 18%;
-  --sidebar-accent-foreground: 60 30% 96%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 150 100% 40%;
+  --sidebar-accent: 217 33% 20%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217 33% 25%;
+  --sidebar-ring: 262 83% 58%;
 }
 
 @theme inline {
@@ -87,11 +87,6 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   color-scheme: dark;
-  /* Retro Grid Background */
-  background-image: 
-    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
 }
 
 /* Typography Overrides */
@@ -103,11 +98,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* The "Win98" style button/card effect but modernized */
 .neo-brutal {
-  @apply border-2 border-border shadow-[4px_4px_0px_0px_hsl(var(--border))] transition-all;
+  @apply border border-border/50 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] transition-all;
 }
 
 .neo-brutal:hover {
-  @apply shadow-[2px_2px_0px_0px_hsl(var(--border))] translate-x-[2px] translate-y-[2px];
+  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] translate-x-[2px] translate-y-[2px] border-primary/50;
 }
 
 .neo-brutal:active {
@@ -116,7 +111,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Input fields */
 input, select, textarea {
-  @apply font-mono border-2 border-border bg-card shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all;
+  @apply font-mono border border-border bg-card shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all;
 }
 
 /* Custom scrollbar */

@@ -86,10 +86,10 @@ export function MediaList({ type }: MediaListProps) {
             return (
               <Card 
                 key={item.id} 
-                className="overflow-hidden group relative cursor-pointer bg-card neo-brutal"
+                className="group relative cursor-pointer bg-card neo-brutal rounded-xl overflow-hidden border-0"
                 onClick={() => setSelectedItem(item)}
               >
-                <div className="aspect-[2/3] relative overflow-hidden border-b-2 border-border">
+                <div className="aspect-[2/3] relative w-full">
                   <img
                     src={getImageUrl(item.posterPath)}
                     alt={item.title}

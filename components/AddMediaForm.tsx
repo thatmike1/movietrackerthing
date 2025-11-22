@@ -143,8 +143,8 @@ export function AddMediaForm() {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {displayData?.results?.map((item: any) => (
-          <Card key={item.id} className="overflow-hidden bg-card neo-brutal">
-            <div className="aspect-[2/3] relative overflow-hidden border-b-2 border-border">
+          <Card key={item.id} className="bg-card neo-brutal rounded-xl overflow-hidden border-0">
+            <div className="aspect-[2/3] relative w-full">
               <img
                 src={getImageUrl(item.poster_path)}
                 alt={item.title || item.name}
