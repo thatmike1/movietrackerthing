@@ -1,12 +1,12 @@
 'use client';
 
+import { mediaItemsSchema, type MediaItem } from '@/lib/media';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { getImageUrl } from '@/lib/tmdb';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Check, Search, Filter } from 'lucide-react';
+import { Loader2, Star, Search, Filter } from 'lucide-react';
 import { MediaDetailDialog } from '@/components/MediaDetailDialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,27 +17,27 @@ interface MediaListProps {
 
 export function MediaList({ type }: MediaListProps) {
   const { mode } = useAppStore();
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'WATCHED' | 'UNWATCHED'>('ALL');
   // Genre filter could be added if we parse all genres from items
-  
+
   const { data: items, isLoading } = useQuery({
     queryKey: ['media', type, mode],
     queryFn: async () => {
       const res = await fetch(`/api/media?type=${type}&userMode=${mode}`);
       if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
+      return mediaItemsSchema.parse(await res.json());
     },
   });
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
-    
-    return items.filter((item: any) => {
+
+    return items.filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const isWatched = item.watchEntries.some((entry: any) => entry.user?.name === mode);
-      
+      const isWatched = item.watchEntries.some((entry) => entry.user?.name === mode);
+
       let matchesStatus = true;
       if (statusFilter === 'WATCHED') matchesStatus = isWatched;
       if (statusFilter === 'UNWATCHED') matchesStatus = !isWatched;
@@ -62,7 +62,7 @@ export function MediaList({ type }: MediaListProps) {
             className="pl-8"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+        <Select value={statusFilter} onValueChange={(value) => { if (value === 'ALL' || value === 'WATCHED' || value === 'UNWATCHED') setStatusFilter(value); }}>
           <SelectTrigger className="w-[180px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Status" />
@@ -79,13 +79,13 @@ export function MediaList({ type }: MediaListProps) {
         <div className="text-center p-8 text-muted-foreground">No content found matching your filters.</div>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {filteredItems.map((item: any) => {
-            const isWatched = item.watchEntries.some((entry: any) => entry.user?.name === mode); 
-            const userRating = item.ratings.find((r: any) => r.user?.name === mode);
-            
+          {filteredItems.map((item) => {
+            const isWatched = item.watchEntries.some((entry) => entry.user?.name === mode);
+            const userRating = item.ratings.find((r) => r.user?.name === mode);
+
             return (
-              <Card 
-                key={item.id} 
+              <Card
+                key={item.id}
                 className="group relative cursor-pointer bg-card neo-brutal rounded-xl overflow-hidden border-0"
                 onClick={() => setSelectedItem(item)}
               >
@@ -95,13 +95,13 @@ export function MediaList({ type }: MediaListProps) {
                     alt={item.title}
                     className="object-cover w-full h-full"
                   />
-                  
+
                   {isWatched && (
                     <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 font-mono text-xs font-bold border-2 border-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                       WATCHED
                     </div>
                   )}
-                  
+
                   {item.voteAverage && (
                     <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 font-mono text-xs font-bold border-2 border-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                       <Star className="h-3 w-3 fill-current" />
@@ -128,10 +128,10 @@ export function MediaList({ type }: MediaListProps) {
       )}
 
       {selectedItem && (
-        <MediaDetailDialog 
-          item={selectedItem} 
-          open={!!selectedItem} 
-          onOpenChange={(open) => !open && setSelectedItem(null)} 
+        <MediaDetailDialog
+          item={selectedItem}
+          open={!!selectedItem}
+          onOpenChange={(open) => !open && setSelectedItem(null)}
         />
       )}
     </div>

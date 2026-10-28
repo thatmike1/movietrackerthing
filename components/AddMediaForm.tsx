@@ -5,13 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Check, Loader2, Star, Filter } from 'lucide-react';
+import { Plus, Loader2, Star } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getImageUrl, TMDBResult } from '@/lib/tmdb';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getImageUrl, tmdbResponseSchema, type TMDBResult } from '@/lib/tmdb';
 
 const GENRES = [
   { id: '28', name: 'Action' },
@@ -40,7 +39,7 @@ export function AddMediaForm() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TMDBResult | null>(null);
   const [rating, setRating] = useState<string>('');
-  
+
   // Browse State
   const [browseType, setBrowseType] = useState<'movie' | 'tv'>('movie');
   const [browseGenre, setBrowseGenre] = useState<string>('all');
@@ -54,7 +53,7 @@ export function AddMediaForm() {
     queryFn: async () => {
       const res = await fetch(`/api/tmdb?endpoint=search&query=${encodeURIComponent(debouncedQuery)}`);
       if (!res.ok) throw new Error('Failed to search');
-      return res.json();
+      return tmdbResponseSchema.parse(await res.json());
     },
     enabled: debouncedQuery.length > 2,
   });
@@ -65,7 +64,7 @@ export function AddMediaForm() {
     queryFn: async () => {
       const res = await fetch(`/api/tmdb?endpoint=discover&type=${browseType}&genre=${browseGenre}`);
       if (!res.ok) throw new Error('Failed to browse');
-      return res.json();
+      return tmdbResponseSchema.parse(await res.json());
     },
     enabled: debouncedQuery.length <= 2, // Only browse when not searching
   });
@@ -117,13 +116,13 @@ export function AddMediaForm() {
 
         {debouncedQuery.length <= 2 && (
           <div className="flex gap-4 items-center">
-             <Tabs value={browseType} onValueChange={(v: any) => setBrowseType(v)}>
+             <Tabs value={browseType} onValueChange={(value) => { if (value === 'movie' || value === 'tv') setBrowseType(value); }}>
                 <TabsList>
                   <TabsTrigger value="movie">Movies</TabsTrigger>
                   <TabsTrigger value="tv">Series</TabsTrigger>
                 </TabsList>
              </Tabs>
-             
+
              <Select value={browseGenre} onValueChange={setBrowseGenre}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Genre" />
@@ -142,7 +141,7 @@ export function AddMediaForm() {
       {isLoading && <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {displayData?.results?.map((item: any) => (
+        {displayData?.results?.map((item) => (
           <Card key={item.id} className="bg-card neo-brutal rounded-xl overflow-hidden border-0">
             <div className="aspect-[2/3] relative w-full">
               <img
@@ -150,7 +149,7 @@ export function AddMediaForm() {
                 alt={item.title || item.name}
                 className="object-cover w-full h-full"
               />
-              
+
               {item.vote_average > 0 && (
                 <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 font-mono text-xs font-bold border-2 border-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                   <Star className="h-3 w-3 fill-current" />
@@ -164,8 +163,8 @@ export function AddMediaForm() {
                 {item.release_date || item.first_air_date || 'Unknown'}
               </p>
               <div className="flex gap-3 mt-5">
-                 <Button 
-                  size="sm" 
+                 <Button
+                  size="sm"
                   className="flex-1 h-10 font-mono font-bold bg-primary text-primary-foreground border-2 border-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -176,8 +175,8 @@ export function AddMediaForm() {
                   <Plus className="h-4 w-4 mr-2" />
                   LIST
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   className="flex-1 h-10 font-mono font-bold bg-card text-foreground border-2 border-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all"
                   onClick={(e) => {
@@ -202,7 +201,7 @@ export function AddMediaForm() {
               Add this to your watched history with a rating.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-4">
              <div className="flex justify-center">
                 <div className="flex gap-1">
@@ -226,8 +225,8 @@ export function AddMediaForm() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedItem(null)}>Cancel</Button>
-            <Button 
-              onClick={() => selectedItem && addMutation.mutate(selectedItem)} 
+            <Button
+              onClick={() => selectedItem && addMutation.mutate(selectedItem)}
               disabled={!rating || addMutation.isPending}
             >
               {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Add'}

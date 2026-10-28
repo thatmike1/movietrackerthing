@@ -1,5 +1,6 @@
 'use client';
 
+import { genreLabels, type MediaItem } from '@/lib/media';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -9,10 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getImageUrl } from '@/lib/tmdb';
 import { useAppStore } from '@/lib/store';
-import { Star, Trash2 } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 interface MediaDetailDialogProps {
-  item: any;
+  item: MediaItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -20,8 +21,8 @@ interface MediaDetailDialogProps {
 export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialogProps) {
   const { mode } = useAppStore();
   const queryClient = useQueryClient();
-  const [rating, setRating] = useState<string>(item.ratings?.find((r: any) => r.user?.name === mode)?.value?.toString() || '');
-  const [review, setReview] = useState<string>(item.ratings?.find((r: any) => r.user?.name === mode)?.review || '');
+  const [rating, setRating] = useState<string>(item.ratings?.find((r) => r.user?.name === mode)?.value?.toString() || '');
+  const [review, setReview] = useState<string>(item.ratings?.find((r) => r.user?.name === mode)?.review || '');
 
   const rateMutation = useMutation({
     mutationFn: async () => {
@@ -50,10 +51,10 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
         <DialogHeader>
           <DialogTitle>{item.title}</DialogTitle>
           <DialogDescription>
-            {item.releaseDate?.split('-')[0]} • {JSON.parse(item.genres || '[]').map((g: any) => g.name || g).join(', ')}
+            {item.releaseDate?.split('-')[0]} • {genreLabels(item.genres)}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4 md:grid-cols-2">
           <div className="aspect-[2/3] relative rounded-md overflow-hidden">
             <img
@@ -88,8 +89,8 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
 
             <div className="space-y-2">
               <Label>Review</Label>
-              <Textarea 
-                placeholder="Write your thoughts..." 
+              <Textarea
+                placeholder="Write your thoughts..."
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
               />

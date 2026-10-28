@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { tmdbResponseSchema } from '@/lib/tmdb';
 import { prisma } from '@/lib/prisma';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
@@ -18,10 +20,10 @@ export async function GET(request: Request) {
   try {
     // 1. Get User's top genres based on high ratings (>= 8)
     // If no ratings, use default popular genres or just popular items
-    
+
     // We need to find the user first
     const user = await prisma.user.findFirst({ where: { name: userMode || 'ME' } });
-    
+
     let genreIds: string = '';
 
     if (user) {
@@ -34,15 +36,15 @@ export async function GET(request: Request) {
       if (topRatings.length > 0) {
         // Extract genres from top rated items
         const genreCounts: Record<number, number> = {};
-        topRatings.forEach((r: any) => {
+        topRatings.forEach((r) => {
            try {
-             const gIds = JSON.parse(r.mediaItem.genres);
+             const gIds = z.array(z.number()).parse(JSON.parse(r.mediaItem.genres));
              if (Array.isArray(gIds)) {
                gIds.forEach((id: number) => {
                  genreCounts[id] = (genreCounts[id] || 0) + 1;
                });
              }
-           } catch (e) {
+           } catch {
              // ignore parsing error
            }
         });
@@ -52,7 +54,7 @@ export async function GET(request: Request) {
           .sort(([, a], [, b]) => b - a)
           .slice(0, 3)
           .map(([id]) => id);
-        
+
         genreIds = sortedGenres.join(',');
       }
     }
@@ -60,24 +62,24 @@ export async function GET(request: Request) {
     // 2. Fetch from TMDB Discover
     // If we have genres, filter by them. If not, just get popular.
     let url = `${BASE_URL}/discover/${type}?api_key=${TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1`;
-    
+
     if (genreIds) {
       url += `&with_genres=${genreIds}`;
     }
 
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch from TMDB');
-    const data = await res.json();
+    const data = tmdbResponseSchema.parse(await res.json());
 
     // 3. Filter out items already in DB
     const existingItems = await prisma.mediaItem.findMany({
       select: { tmdbId: true },
     });
-    const existingIds = new Set(existingItems.map((i: any) => i.tmdbId));
+    const existingIds = new Set(existingItems.map((i) => i.tmdbId));
 
     const recommendations = data.results
-      .filter((item: any) => !existingIds.has(item.id))
-      .map((item: any) => ({
+      .filter((item) => !existingIds.has(item.id))
+      .map((item) => ({
         id: item.id, // TMDB ID
         tmdbId: item.id,
         title: item.title || item.name,

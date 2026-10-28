@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     // Resolve User based on mode
     let userId = body.userId;
     if (!userId && userMode) {
-      const user = await prisma.user.upsert({
+      await prisma.user.upsert({
         where: { id: userMode }, // Using mode as ID for simplicity (e.g. "ME", "GIRLFRIEND") or name
         // Actually, ID must be CUID usually, but we can seed/find by name.
         // Let's use name for lookup.
@@ -92,10 +93,10 @@ export async function GET(request: Request) {
     // Basic query construction
     // If userMode is provided, we might want to filter by what THAT user has watched.
     // But for the main list, we usually want to see "All Movies" or "My Watched Movies".
-    
+
     // Let's assume we want to list all MediaItems first, and optionally filter by watched status for a specific user.
-    
-    const where: any = {};
+
+    const where: Prisma.MediaItemWhereInput = {};
     if (type) where.type = type;
 
     // If we want to filter by "Unseen" (watched=false) for a specific user:

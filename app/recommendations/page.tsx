@@ -1,5 +1,6 @@
 'use client';
 
+import { mediaItemsSchema, discoveryItemsSchema, type MediaItem, type DiscoveryItem } from '@/lib/media';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppStore } from '@/lib/store';
@@ -11,19 +12,19 @@ import { MediaDetailDialog } from '@/components/MediaDetailDialog';
 
 export default function RecommendationsPage() {
   const { mode } = useAppStore();
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [filterType, setFilterType] = useState<'MOVIE' | 'SERIES' | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch only UNSEEN items for the current mode
-  const { data: items, isLoading } = useQuery({
+  const { data: items } = useQuery({
     queryKey: ['recommendations', mode, filterType],
     queryFn: async () => {
       let url = `/api/media?watched=false&userMode=${mode}`;
       if (filterType) url += `&type=${filterType}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
+      return mediaItemsSchema.parse(await res.json());
     },
   });
 
@@ -35,12 +36,12 @@ export default function RecommendationsPage() {
       if (filterType) url += `&type=${filterType === 'SERIES' ? 'tv' : 'movie'}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch discovery');
-      return res.json();
+      return discoveryItemsSchema.parse(await res.json());
     },
   });
 
   const addMutation = useMutation({
-    mutationFn: async (item: any) => {
+    mutationFn: async (item: DiscoveryItem) => {
        const res = await fetch('/api/media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,24 +81,24 @@ export default function RecommendationsPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">For You</h2>
           <p className="text-muted-foreground">
-            Recommendations based on what you haven't seen yet ({mode === 'TOGETHER' ? 'together' : 'personally'}).
+            Recommendations based on what you haven&apos;t seen yet ({mode === 'TOGETHER' ? 'together' : 'personally'}).
           </p>
         </div>
 
         <div className="flex gap-4">
-          <Button 
+          <Button
             variant={filterType === null ? 'default' : 'outline'}
             onClick={() => setFilterType(null)}
           >
             All
           </Button>
-          <Button 
+          <Button
             variant={filterType === 'MOVIE' ? 'default' : 'outline'}
             onClick={() => setFilterType('MOVIE')}
           >
             <Film className="mr-2 h-4 w-4" /> Movies
           </Button>
-          <Button 
+          <Button
             variant={filterType === 'SERIES' ? 'default' : 'outline'}
             onClick={() => setFilterType('SERIES')}
           >
@@ -124,12 +125,12 @@ export default function RecommendationsPage() {
         <p className="text-muted-foreground">
           Top picks from TMDB based on your favorite genres.
         </p>
-        
+
         {isDiscoveryLoading ? (
            <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {discoveryItems?.map((item: any) => (
+            {discoveryItems?.map((item) => (
               <Card key={item.id} className="overflow-hidden group relative">
                 <div className="aspect-[2/3] relative">
                   <img
@@ -153,10 +154,10 @@ export default function RecommendationsPage() {
       </div>
 
       {selectedItem && (
-        <MediaDetailDialog 
-          item={selectedItem} 
-          open={!!selectedItem} 
-          onOpenChange={(open) => !open && setSelectedItem(null)} 
+        <MediaDetailDialog
+          item={selectedItem}
+          open={!!selectedItem}
+          onOpenChange={(open) => !open && setSelectedItem(null)}
         />
       )}
     </div>

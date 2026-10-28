@@ -2,7 +2,7 @@
 
 import { useAppStore, UserMode } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { User, Users, Heart } from 'lucide-react';
+import { User, Users, Heart, type LucideIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
 export function ModeToggle() {
   const { mode, setMode } = useAppStore();
 
-  const modes: { value: UserMode; label: string; icon: any }[] = [
+  const modes: { value: UserMode; label: string; icon: LucideIcon }[] = [
     { value: 'ME', label: 'Just Me', icon: User },
     { value: 'GIRLFRIEND', label: 'Girlfriend', icon: Heart },
     { value: 'TOGETHER', label: 'Together', icon: Users },
