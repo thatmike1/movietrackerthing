@@ -29,3 +29,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Type checking
+
+`pnpm typecheck` uses TypeScript 7.0.2 through the `@typescript/native` alias.
+`pnpm build` runs that check before the Next.js production build. TypeScript 5
+remains installed for the JavaScript compiler API used by Next.js and ESLint.
+The global `*.css` declaration follows [TypeScript's asset import guidance](https://www.typescriptlang.org/tsconfig/noUncheckedSideEffectImports.html);
+CSS imports are resolved by Next.js during the build.
